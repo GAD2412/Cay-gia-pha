@@ -45,6 +45,12 @@ public static class Kinship
         return g == "nữ" || g == "nu" || g == "female" || g == "f";
     }
 
+    public static int CountUp(PathResult path) =>
+        path.Steps.Count(s => (s.RelType == "PARENT_OF" || s.RelType == "ADOPTED_PARENT_OF") && s.IsUp);
+
+    public static int CountDown(PathResult path) =>
+        path.Steps.Count(s => (s.RelType == "PARENT_OF" || s.RelType == "ADOPTED_PARENT_OF") && !s.IsUp);
+
     public static string TranslatePathToTitle(PathResult path)
     {
         if (path.Nodes.Count < 2 || path.Steps.Count == 0)

@@ -114,7 +114,7 @@ app.MapPost("/api/relationships", async (Neo4jRepo repo, CreateRelationshipReque
     try
     {
         await repo.CreateRelationshipAsync(req.FromId, req.ToId, req.RelType);
-        return Results.Ok();
+        return Results.Ok(new { success = true });
     }
     catch (ArgumentException ex)
     {
@@ -200,12 +200,17 @@ app.MapGet("/api/kinship", async (Neo4jRepo repo, string fromId, string toId) =>
 
         var title = Kinship.TranslatePathToTitle(pathResult);
         var pathDescription = Kinship.FormatPathDescription(pathResult);
+        var upCount = Kinship.CountUp(pathResult);
+        var downCount = Kinship.CountDown(pathResult);
 
         return Results.Ok(new
         {
             title,
             pathDescription,
             stepCount = pathResult.Steps.Count,
+            generationGap = Math.Max(upCount, downCount),
+            upCount,
+            downCount,
             nodes = pathResult.Nodes,
             steps = pathResult.Steps
         });

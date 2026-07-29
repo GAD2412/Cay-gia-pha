@@ -58,7 +58,8 @@
       throw new Error(message);
     }
     if (res.status === 204) return null;
-    return res.json();
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   }
 
   function setConnected(ok) {
@@ -116,6 +117,16 @@
     });
   }
 
+  function extraPropsSummary(extraProps) {
+    const entries = Object.entries(extraProps || {});
+    if (entries.length === 0) return "—";
+    return el(
+      "div",
+      { class: "extra-props-cell" },
+      entries.map(([k, v]) => el("div", {}, `${k}: ${v}`))
+    );
+  }
+
   function renderPersonsTable() {
     const tbody = document.getElementById("personsTbody");
     tbody.innerHTML = "";
@@ -131,6 +142,7 @@
         el("td", {}, p.occupation || "—"),
         el("td", {}, p.cccd || "—"),
         el("td", {}, p.phoneNumber || "—"),
+        el("td", {}, extraPropsSummary(p.extraProps)),
         el("td", {}, el("div", { class: "row-actions" }, [
           el("button", {
             class: "btn btn-secondary btn-icon", type: "button", "aria-label": `Sửa ${p.name}`,
@@ -475,6 +487,9 @@
         " của ",
         personA?.name ?? ""
       );
+      if (data.generationGap > 0) {
+        titleEl.append(el("span", { class: "gen-gap" }, ` (cách nhau ${data.generationGap} đời)`));
+      }
 
       renderChain(data.nodes, data.steps);
       chainWrap.hidden = false;
