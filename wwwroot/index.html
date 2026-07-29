@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quản lý Gia phả &amp; Tra cứu Quan hệ Họ hàng</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-title">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3v6M12 21v-6M5 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM5 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+      <path d="M6.5 15.5 9.5 11M17.5 15.5 14.5 11"/>
+    </svg>
+    <span>Quản lý Gia phả &amp; Họ hàng</span>
+  </div>
+  <div class="conn-status" id="connStatus" role="status">
+    <span class="conn-dot" id="connDot"></span>
+    <span id="connText">Đang kết nối Neo4j…</span>
+  </div>
+</header>
+
+<main>
+  <nav class="tabs" role="tablist" aria-label="Chức năng chính">
+    <button class="tab-btn" role="tab" id="tab-btn-persons" aria-controls="tab-persons" aria-selected="true" data-tab="persons">Danh sách người</button>
+    <button class="tab-btn" role="tab" id="tab-btn-relationships" aria-controls="tab-relationships" aria-selected="false" data-tab="relationships">Mối quan hệ</button>
+    <button class="tab-btn" role="tab" id="tab-btn-reltypes" aria-controls="tab-reltypes" aria-selected="false" data-tab="reltypes">Loại quan hệ</button>
+    <button class="tab-btn" role="tab" id="tab-btn-kinship" aria-controls="tab-kinship" aria-selected="false" data-tab="kinship">Tra cứu họ hàng</button>
+    <button class="tab-btn" role="tab" id="tab-btn-graph" aria-controls="tab-graph" aria-selected="false" data-tab="graph">Sơ đồ cây</button>
+  </nav>
+
+  <!-- TAB 1: PERSONS -->
+  <section class="tab-panel active" id="tab-persons" role="tabpanel" aria-labelledby="tab-btn-persons">
+    <div class="card toolbar">
+      <div class="field">
+        <label for="searchInput">Tìm theo tên</label>
+        <input type="search" id="searchInput" placeholder="Ví dụ: Nguyễn…" autocomplete="off" />
+      </div>
+      <button class="btn btn-secondary" id="btnRefreshPersons" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+        Làm mới
+      </button>
+      <button class="btn btn-primary" id="btnAddPerson" type="button" style="margin-left:auto">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Thêm người
+      </button>
+    </div>
+
+    <div class="card table-wrap" id="personsTableWrap">
+      <table id="personsTable">
+        <thead>
+          <tr>
+            <th data-sort="name" aria-sort="none">Họ và tên <span class="sort-arrow">↕</span></th>
+            <th data-sort="gender" aria-sort="none">Giới tính <span class="sort-arrow">↕</span></th>
+            <th data-sort="birthYear" aria-sort="none">Năm sinh <span class="sort-arrow">↕</span></th>
+            <th>Nơi sinh</th>
+            <th>Nghề nghiệp</th>
+            <th>CCCD</th>
+            <th>SĐT</th>
+            <th><span class="visually-hidden">Thao tác</span></th>
+          </tr>
+        </thead>
+        <tbody id="personsTbody"></tbody>
+      </table>
+      <div class="empty-state" id="personsEmpty" hidden>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p>Chưa có ai trong gia phả. Hãy thêm người đầu tiên.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: RELATIONSHIPS -->
+  <section class="tab-panel" id="tab-relationships" role="tabpanel" aria-labelledby="tab-btn-relationships" hidden>
+    <div class="card toolbar">
+      <div class="field">
+        <label for="relFrom">Người 1 (Từ)</label>
+        <select id="relFrom"></select>
+      </div>
+      <div class="field">
+        <label for="relType">Loại quan hệ</label>
+        <select id="relType"></select>
+      </div>
+      <div class="field">
+        <label for="relTo">Người 2 (Đến)</label>
+        <select id="relTo"></select>
+      </div>
+      <button class="btn btn-primary" id="btnCreateRel" type="button">Tạo quan hệ</button>
+    </div>
+
+    <div class="card table-wrap" id="relTableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Người 1</th>
+            <th>Quan hệ</th>
+            <th>Người 2</th>
+            <th><span class="visually-hidden">Thao tác</span></th>
+          </tr>
+        </thead>
+        <tbody id="relTbody"></tbody>
+      </table>
+      <div class="empty-state" id="relEmpty" hidden>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M18 8a4 4 0 1 0-8 0M18 8a4 4 0 1 1-8 0M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+        <p>Chưa có mối quan hệ nào được thiết lập.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: RELATION TYPES -->
+  <section class="tab-panel" id="tab-reltypes" role="tabpanel" aria-labelledby="tab-btn-reltypes" hidden>
+    <div class="card toolbar">
+      <div class="field">
+        <label for="rtCode">Mã (viết hoa, không dấu, vd: ANH_EM_KET_NGHIA)</label>
+        <input id="rtCode" maxlength="42" placeholder="VD: BAN_THAN" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label for="rtLabel">Tên hiển thị</label>
+        <input id="rtLabel" maxlength="80" placeholder="VD: Bạn thân" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary" id="btnCreateRelType" type="button">Thêm loại quan hệ</button>
+    </div>
+
+    <div class="card table-wrap" id="relTypesTableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Tên hiển thị</th>
+            <th><span class="visually-hidden">Thao tác</span></th>
+          </tr>
+        </thead>
+        <tbody id="relTypesTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 3: KINSHIP -->
+  <section class="tab-panel" id="tab-kinship" role="tabpanel" aria-labelledby="tab-btn-kinship" hidden>
+    <div class="card kinship-form">
+      <div class="field">
+        <label for="kinA">Người A (Tôi)</label>
+        <select id="kinA"></select>
+      </div>
+      <div class="field">
+        <label for="kinB">Người B (Cần tra cứu)</label>
+        <select id="kinB"></select>
+      </div>
+      <button class="btn btn-primary" id="btnFindKinship" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Tra cứu
+      </button>
+    </div>
+
+    <div class="card kinship-result" id="kinshipResult" hidden>
+      <h2 id="kinshipTitle"></h2>
+    </div>
+
+    <div class="card chain-scroll" id="kinshipChainWrap" hidden>
+      <div class="chain" id="kinshipChain"></div>
+    </div>
+  </section>
+
+  <!-- TAB: GRAPH -->
+  <section class="tab-panel" id="tab-graph" role="tabpanel" aria-labelledby="tab-btn-graph" hidden>
+    <div class="card toolbar">
+      <button class="btn btn-secondary" id="btnRefreshGraph" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
+        Sắp xếp lại
+      </button>
+      <div class="graph-legend" id="graphFilter"></div>
+    </div>
+    <div class="card graph-wrap" id="graphWrap">
+      <svg id="graphSvg" width="100%" height="100%"></svg>
+      <div class="empty-state" id="graphEmpty" hidden>
+        <p>Chưa có dữ liệu để vẽ sơ đồ.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Person add/edit modal -->
+<div class="modal-overlay" id="personModalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="personModalTitle">
+    <h2 id="personModalTitle">Thêm người mới</h2>
+    <form class="modal-form" id="personForm" novalidate>
+      <div class="field">
+        <label for="pName">Họ và tên</label>
+        <input id="pName" name="name" required maxlength="120" />
+        <div class="field-error" id="pNameError"></div>
+      </div>
+      <div class="field">
+        <label for="pGender">Giới tính</label>
+        <select id="pGender" name="gender">
+          <option value="Nam">Nam</option>
+          <option value="Nữ">Nữ</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="pBirthYear">Năm sinh</label>
+        <input id="pBirthYear" name="birthYear" type="number" min="1900" max="2100" value="1990" />
+      </div>
+      <div class="field">
+        <label for="pBirthPlace">Nơi sinh</label>
+        <input id="pBirthPlace" name="birthPlace" maxlength="120" />
+      </div>
+      <div class="field">
+        <label for="pOccupation">Nghề nghiệp</label>
+        <input id="pOccupation" name="occupation" maxlength="120" />
+      </div>
+      <div class="field">
+        <label for="pCCCD">CCCD</label>
+        <input id="pCCCD" name="cccd" maxlength="20" inputmode="numeric" />
+        <div class="field-error" id="pCCCDError"></div>
+      </div>
+      <div class="field">
+        <label for="pPhoneNumber">Số điện thoại</label>
+        <input id="pPhoneNumber" name="phoneNumber" maxlength="20" inputmode="tel" />
+        <div class="field-error" id="pPhoneNumberError"></div>
+      </div>
+      <div class="field">
+        <label for="pNote">Ghi chú</label>
+        <input id="pNote" name="note" maxlength="200" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btnCancelPerson">Hủy</button>
+        <button type="submit" class="btn btn-primary" id="btnSavePerson">Lưu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
