@@ -568,6 +568,14 @@ tbody tr:hover { background: var(--muted); }
   margin-top: 8px;
 }
 
+.extra-prop-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.extra-prop-row .extra-key { flex: 0 0 40%; }
+.extra-prop-row .extra-value { flex: 1; }
+
 .field-error {
   color: var(--destructive);
   font-size: 0.8125rem;

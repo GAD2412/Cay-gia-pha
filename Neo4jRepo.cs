@@ -97,7 +97,9 @@ public class Neo4jRepo : IAsyncDisposable
                        coalesce(p.occupation, '') AS occupation,
                        coalesce(p.note, '') AS note,
                        coalesce(p.cccd, '') AS cccd,
-                       coalesce(p.phoneNumber, '') AS phoneNumber
+                       coalesce(p.phoneNumber, '') AS phoneNumber,
+                       coalesce(p.extraKeys, []) AS extraKeys,
+                       coalesce(p.extraValues, []) AS extraValues
                 ORDER BY name";
 
             var cursor = await tx.RunAsync(query, new { searchName });
@@ -116,12 +118,21 @@ public class Neo4jRepo : IAsyncDisposable
                     Occupation = rec["occupation"]?.As<string>() ?? "",
                     Note = rec["note"]?.As<string>() ?? "",
                     CCCD = rec["cccd"]?.As<string>() ?? "",
-                    PhoneNumber = rec["phoneNumber"]?.As<string>() ?? ""
+                    PhoneNumber = rec["phoneNumber"]?.As<string>() ?? "",
+                    ExtraProps = ZipExtraProps(rec["extraKeys"].As<List<string>>(), rec["extraValues"].As<List<string>>())
                 });
             }
 
             return list;
         });
+    }
+
+    private static Dictionary<string, string> ZipExtraProps(List<string> keys, List<string> values)
+    {
+        var dict = new Dictionary<string, string>();
+        for (int i = 0; i < keys.Count && i < values.Count; i++)
+            dict[keys[i]] = values[i];
+        return dict;
     }
 
     public async Task CreatePersonAsync(PersonNode person)
@@ -143,7 +154,9 @@ public class Neo4jRepo : IAsyncDisposable
                     occupation: $occupation,
                     note: $note,
                     cccd: $cccd,
-                    phoneNumber: $phoneNumber
+                    phoneNumber: $phoneNumber,
+                    extraKeys: $extraKeys,
+                    extraValues: $extraValues
                 })";
 
             await tx.RunAsync(query, new
@@ -156,7 +169,9 @@ public class Neo4jRepo : IAsyncDisposable
                 occupation = person.Occupation ?? "",
                 note = person.Note ?? "",
                 cccd = person.CCCD ?? "",
-                phoneNumber = person.PhoneNumber ?? ""
+                phoneNumber = person.PhoneNumber ?? "",
+                extraKeys = person.ExtraProps.Keys.ToArray(),
+                extraValues = person.ExtraProps.Values.ToArray()
             });
         });
     }
@@ -176,7 +191,9 @@ public class Neo4jRepo : IAsyncDisposable
                     p.occupation = $occupation,
                     p.note = $note,
                     p.cccd = $cccd,
-                    p.phoneNumber = $phoneNumber";
+                    p.phoneNumber = $phoneNumber,
+                    p.extraKeys = $extraKeys,
+                    p.extraValues = $extraValues";
 
             await tx.RunAsync(query, new
             {
@@ -188,7 +205,9 @@ public class Neo4jRepo : IAsyncDisposable
                 occupation = person.Occupation ?? "",
                 note = person.Note ?? "",
                 cccd = person.CCCD ?? "",
-                phoneNumber = person.PhoneNumber ?? ""
+                phoneNumber = person.PhoneNumber ?? "",
+                extraKeys = person.ExtraProps.Keys.ToArray(),
+                extraValues = person.ExtraProps.Values.ToArray()
             });
         });
     }
@@ -354,7 +373,9 @@ public class Neo4jRepo : IAsyncDisposable
                     occupation: coalesce(n.occupation, ''),
                     note: coalesce(n.note, ''),
                     cccd: coalesce(n.cccd, ''),
-                    phoneNumber: coalesce(n.phoneNumber, '')
+                    phoneNumber: coalesce(n.phoneNumber, ''),
+                    extraKeys: coalesce(n.extraKeys, []),
+                    extraValues: coalesce(n.extraValues, [])
                   }] AS nodes";
 
             var cursor = await tx.RunAsync(cypher, new { fromId, toId });
@@ -378,7 +399,10 @@ public class Neo4jRepo : IAsyncDisposable
                     Occupation = dict["occupation"].ToString() ?? "",
                     Note = dict["note"].ToString() ?? "",
                     CCCD = dict["cccd"].ToString() ?? "",
-                    PhoneNumber = dict["phoneNumber"].ToString() ?? ""
+                    PhoneNumber = dict["phoneNumber"].ToString() ?? "",
+                    ExtraProps = ZipExtraProps(
+                        ((List<object>)dict["extraKeys"]).Select(o => o.ToString() ?? "").ToList(),
+                        ((List<object>)dict["extraValues"]).Select(o => o.ToString() ?? "").ToList())
                 });
             }
 

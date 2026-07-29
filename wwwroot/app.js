@@ -194,6 +194,29 @@
     fillPersonSelects();
   }
 
+  function addExtraPropRow(key = "", value = "") {
+    const list = document.getElementById("pExtraList");
+    const row = el("div", { class: "extra-prop-row" }, [
+      el("input", { class: "extra-key", placeholder: "Tên thuộc tính", maxlength: "60", value: key }),
+      el("input", { class: "extra-value", placeholder: "Giá trị", maxlength: "200", value: value }),
+      el("button", {
+        type: "button", class: "btn btn-danger btn-icon", "aria-label": "Xoá thuộc tính",
+        onclick: () => row.remove(),
+      }, iconTrash()),
+    ]);
+    list.appendChild(row);
+  }
+
+  function readExtraProps() {
+    const props = {};
+    document.querySelectorAll("#pExtraList .extra-prop-row").forEach((row) => {
+      const key = row.querySelector(".extra-key").value.trim();
+      const value = row.querySelector(".extra-value").value.trim();
+      if (key) props[key] = value;
+    });
+    return props;
+  }
+
   function openPersonModal(existing) {
     const overlay = document.getElementById("personModalOverlay");
     const form = document.getElementById("personForm");
@@ -207,6 +230,8 @@
     form.cccd.value = existing?.cccd || "";
     form.phoneNumber.value = existing?.phoneNumber || "";
     form.note.value = existing?.note || "";
+    document.getElementById("pExtraList").innerHTML = "";
+    for (const [key, value] of Object.entries(existing?.extraProps || {})) addExtraPropRow(key, value);
     document.getElementById("pNameError").textContent = "";
     document.getElementById("pCCCDError").textContent = "";
     document.getElementById("pPhoneNumberError").textContent = "";
@@ -249,6 +274,7 @@
       cccd,
       phoneNumber,
       note: form.note.value.trim(),
+      extraProps: readExtraProps(),
     };
     const btn = document.getElementById("btnSavePerson");
     setButtonLoading(btn, true, "Đang lưu…");
@@ -832,6 +858,7 @@
     });
 
     document.getElementById("btnAddPerson").addEventListener("click", () => openPersonModal(null));
+    document.getElementById("btnAddExtraProp").addEventListener("click", () => addExtraPropRow());
     document.getElementById("btnCancelPerson").addEventListener("click", closePersonModal);
     document.getElementById("personForm").addEventListener("submit", savePerson);
     document.getElementById("personModalOverlay").addEventListener("click", (e) => {

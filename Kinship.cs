@@ -16,6 +16,7 @@ public class PersonNode
     public string Note { get; set; } = "";
     public string CCCD { get; set; } = "";
     public string PhoneNumber { get; set; } = "";
+    public Dictionary<string, string> ExtraProps { get; set; } = new();
 
     public string DisplayText => $"{Name} ({Gender}, {BirthYear})";
     public override string ToString() => DisplayText;
